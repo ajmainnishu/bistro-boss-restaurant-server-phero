@@ -22,9 +22,25 @@ async function run() {
     try {
         await client.connect();
         const menuCollection = client.db('usersDB').collection('menu');
-        // menu get from server
+        const cartCollection = client.db('usersDB').collection('carts');
+        // menu
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
+            res.send(result);
+        })
+        // carts
+        app.get('/carts', async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([])
+            }
+            const query = { email: email };
+            const result = await cartCollection.find(query).toArray();
+            res.send(result);
+        })
+        app.post('/carts', async (req, res) => {
+            const data = req.body;
+            const result = await cartCollection.insertOne(data);
             res.send(result);
         })
         await client.db("admin").command({ ping: 1 });

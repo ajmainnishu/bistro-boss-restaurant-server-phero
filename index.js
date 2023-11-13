@@ -23,6 +23,22 @@ async function run() {
         await client.connect();
         const menuCollection = client.db('usersDB').collection('menu');
         const cartCollection = client.db('usersDB').collection('carts');
+        const userCollection = client.db('usersDB').collection('users');
+        // users
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray();
+            res.send(result);
+        })
+        app.post('/users', async (req, res) => {
+            const data = req.body;
+            const query = { email: data.email };
+            const existingUser = await userCollection.findOne(query);
+            if (existingUser) {
+                return res.send({ message: 'user already exits' })
+            }
+            const result = await userCollection.insertOne(data);
+            res.send(result);
+        })
         // menu
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();

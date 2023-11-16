@@ -49,9 +49,30 @@ async function run() {
             })
             res.send(token);
         })
+        // verify admin
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ error: true, message: 'forbidden message' });
+            }
+            next();
+        }
         // users
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await userCollection.find().toArray();
+            res.send(result);
+        })
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const verifyEmail = req.decoded.email;
+            if (verifyEmail !== email) {
+                return res.send({ admin: false })
+            }
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const result = { admin: user?.role === 'admin' };
             res.send(result);
         })
         app.post('/users', async (req, res) => {
@@ -93,7 +114,7 @@ async function run() {
                 res.send([])
             }
             const decodedEmail = req.decoded.email;
-            if(email !== decodedEmail) {
+            if (email !== decodedEmail) {
                 return res.status(403).send({ error: true, message: 'forbidden access' })
             }
             const query = { email: email };

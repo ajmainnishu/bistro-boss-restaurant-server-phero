@@ -107,6 +107,32 @@ async function run() {
             const result = await menuCollection.find().toArray();
             res.send(result);
         })
+        app.post('/menu', verifyJWT, verifyAdmin, async (req, res) => {
+            const data = req.body;
+            const result = await menuCollection.insertOne(data);
+            res.send(result);
+        })
+        app.put('/menu/:id', async (req, res) => {
+            const id = req.params.id;
+            const data = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = { 
+                $set: {
+                    name: data.name,
+                    price: data.price,
+                    category: data.category,
+                    recipe: data.recipe
+                }
+             };
+            const result = await menuCollection.updateOne(filter, updateDoc)
+            res.send(result);
+        })
+        app.delete('/menu/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await menuCollection.deleteOne(query);
+            res.send(result);
+        })
         // carts
         app.get('/carts', verifyJWT, async (req, res) => {
             const email = req.query.email;

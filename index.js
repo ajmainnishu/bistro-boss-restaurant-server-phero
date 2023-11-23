@@ -4,6 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
@@ -41,6 +42,7 @@ async function run() {
         const menuCollection = client.db('usersDB').collection('menu');
         const cartCollection = client.db('usersDB').collection('carts');
         const userCollection = client.db('usersDB').collection('users');
+        const paymentCollection = client.db('usersDB').collection('payments');
         // jwt
         app.post('/jwt', (req, res) => {
             const user = req.body;
@@ -116,14 +118,14 @@ async function run() {
             const id = req.params.id;
             const data = req.body;
             const filter = { _id: new ObjectId(id) };
-            const updateDoc = { 
+            const updateDoc = {
                 $set: {
                     name: data.name,
                     price: data.price,
                     category: data.category,
                     recipe: data.recipe
                 }
-             };
+            };
             const result = await menuCollection.updateOne(filter, updateDoc)
             res.send(result);
         })
@@ -157,6 +159,26 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const result = await cartCollection.deleteOne(query);
             res.send(result);
+        })
+        // payment
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card']
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+        app.post('/payments', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const insertResult = await paymentCollection.insertOne(payment);
+            const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } };
+            const deleteResult = await cartCollection.deleteMany(query);
+            res.send({ insertResult, deleteResult });
         })
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");

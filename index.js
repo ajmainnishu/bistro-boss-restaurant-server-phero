@@ -42,6 +42,7 @@ async function run() {
         const menuCollection = client.db('usersDB').collection('menu');
         const cartCollection = client.db('usersDB').collection('carts');
         const userCollection = client.db('usersDB').collection('users');
+        const bookingCollection = client.db('usersDB').collection('userbookings');
         const paymentCollection = client.db('usersDB').collection('payments');
         // jwt
         app.post('/jwt', (req, res) => {
@@ -158,6 +159,12 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await cartCollection.deleteOne(query);
+            res.send(result);
+        })
+        // booking
+        app.post('/bookings', verifyJWT, async (req, res) => {
+            const data = req.body;
+            const result = await bookingCollection.insertOne(data);
             res.send(result);
         })
         // payment

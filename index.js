@@ -162,9 +162,24 @@ async function run() {
             res.send(result);
         })
         // booking
+        app.get('/bookings', verifyJWT, verifyAdmin, async (req, res) => {
+            const result = await bookingCollection.find().toArray();
+            res.send(result);
+        })
         app.post('/bookings', verifyJWT, async (req, res) => {
             const data = req.body;
             const result = await bookingCollection.insertOne(data);
+            res.send(result);
+        })
+        app.patch('/bookings/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: 'done'
+                }
+            }
+            const result = await bookingCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
         // payment

@@ -166,6 +166,19 @@ async function run() {
             const result = await bookingCollection.find().toArray();
             res.send(result);
         })
+        app.get('/userbookings', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([])
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+            const query = { email: email };
+            const result = await bookingCollection.find(query).toArray();
+            res.send(result);
+        })
         app.post('/bookings', verifyJWT, async (req, res) => {
             const data = req.body;
             const result = await bookingCollection.insertOne(data);
@@ -180,6 +193,12 @@ async function run() {
                 }
             }
             const result = await bookingCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+        app.delete('/bookings/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await bookingCollection.deleteOne(query);
             res.send(result);
         })
         // payment

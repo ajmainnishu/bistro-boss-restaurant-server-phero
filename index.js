@@ -234,7 +234,7 @@ async function run() {
             const deleteResult = await cartCollection.deleteMany(query);
             res.send({ insertResult, deleteResult });
         })
-        // admin state
+        // admin stat
         app.get('/admin-stats', verifyJWT, verifyAdmin, async (req, res) => {
             const payments = await paymentCollection.find().toArray();
             const revenue = payments.reduce((sum, payment) => sum + payment.price, 0);
@@ -274,6 +274,23 @@ async function run() {
             ];
             const result = await paymentCollection.aggregate(pipeline).toArray();
             res.send(result)
+        })
+        // user stat
+        app.get('/userhome', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([])
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+            const query = { email: email };
+            const menu = await menuCollection.find().toArray();
+            const shop = await cartCollection.find(query).toArray();
+            const contact = await bookingCollection.find(query).toArray();
+            const payment = await paymentCollection.find(query).toArray();
+            res.send({ menu, shop, contact, payment })
         })
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
